@@ -23,7 +23,7 @@ public class ChainPositionOverride : MonoBehaviour
         retractTarget = 1f-Vector3.Distance(transform.position, EndPoint.position)*1.11f / chain.fullLength;
         retract = Mathf.SmoothDamp(retract, retractTarget, ref retractVelocity, retractSmoothTime, retractMaxSpeed);
         for (int i = 0; i < chain._joints.Length; i++) {
-            float retracted = Mathf.Clamp01(((retract * chain._joints.Length) - (i) + 3f)/3f);
+            float retracted = Mathf.Clamp01(((retract * chain._joints.Length) - (i) + 1f)/1f);
             chain.joints[i].retracted = retracted;
             if (retracted > 0f) {
                 chain.joints[i].retractedPosition = RetractedPosition(i);

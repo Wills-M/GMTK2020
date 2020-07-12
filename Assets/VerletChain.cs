@@ -13,6 +13,7 @@ public class VerletChain : MonoBehaviour
     public Transform endPoint;
     public int kickIndex = 11;
     public float kickStrength = 1f;
+    public DropSpawner[] iceCreamOrbs;
     public float fullLength {
         get {
             return radius * (float)(_joints.Length-1);
@@ -49,16 +50,18 @@ public class VerletChain : MonoBehaviour
     public float lickDecay = 2f;
     bool licking;
     IEnumerator Lick() {
-        for (int i = 0; i < (int)(joints.Count*.8f); i++) {
-            yield return new WaitForSeconds(lickInterval);
-            joints[i].SetPendingKick(Vector3.up * kickStrength);
-        }
+        // for (int i = 0; i < (int)(joints.Count*.8f); i++) {
+        //     yield return new WaitForSeconds(lickInterval);
+        //     joints[i].SetPendingKick(Vector3.up * kickStrength);
+        // }
         licking = true;
         joints[joints.Count-1].kinematic = false;
-        for (int i = (int)(joints.Count*.8f); i < joints.Count; i++) {
-            yield return new WaitForSeconds(lickInterval);
-            joints[i].SetPendingKick(Vector3.up * kickStrength);
-        }
+        // for (int i = (int)(joints.Count*.8f); i < joints.Count; i++) {
+        //     yield return new WaitForSeconds(lickInterval);
+        //     joints[i].SetPendingKick(Vector3.up * kickStrength);
+        // }
+
+            joints[kickIndex].SetPendingKick(Vector3.up * kickStrength);
 
         yield return new WaitForSeconds(lickDecay);
         joints[joints.Count-1].kinematic = true;
@@ -107,6 +110,15 @@ public class VerletChain : MonoBehaviour
                 second.position += changeAmount * .5f;
             } else {
                 second.position += changeAmount;
+            }
+        }
+    }
+
+    private void ConstrainOrbs () {
+        for (int i = 0; i < joints.Count-1; i++) {
+            for (int j = 0; j < iceCreamOrbs.Length; j++) {
+                Vector3 delta = (joints[i].position - iceCreamOrbs[j].transform.position);
+                joints[i].position = delta.normalized * Mathf.Max(iceCreamOrbs[j].radius, delta.magnitude);
             }
         }
     }
