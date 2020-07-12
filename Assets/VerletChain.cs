@@ -11,6 +11,8 @@ public class VerletChain : MonoBehaviour
     public List<Joint> joints;
     public Transform topPoint;
     public Transform endPoint;
+    public int kickIndex = 11;
+    public float kickStrength = 1f;
     public float fullLength {
         get {
             return radius * (float)(_joints.Length-1);
@@ -27,30 +29,47 @@ public class VerletChain : MonoBehaviour
 
     }
 
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0)) {
+            joints[kickIndex].SetPendingKick(Vector3.up * kickStrength);
+            StartCoroutine(Lick());
+        }
+    }
+
     // Update is called once per frame
     void LateUpdate()
     {
         Simulate();
         ConstrainForward();
         ConstrainBackward();
-        ConstrainForward();
-        ConstrainBackward();
-        ConstrainForward();
-        ConstrainBackward();
-        ConstrainForward();
-        ConstrainBackward();
-        ConstrainForward();
-        ConstrainBackward();
-        ConstrainBackward();
-        ConstrainForward();
-        ConstrainBackward();
-        ConstrainForward();
+    }
+
+    public float lickInterval = .04f;
+    public float lickDecay = 2f;
+    bool licking;
+    IEnumerator Lick() {
+        for (int i = 0; i < (int)(joints.Count*.8f); i++) {
+            yield return new WaitForSeconds(lickInterval);
+            joints[i].SetPendingKick(Vector3.up * kickStrength);
+        }
+        licking = true;
+        joints[joints.Count-1].kinematic = false;
+        for (int i = (int)(joints.Count*.8f); i < joints.Count; i++) {
+            yield return new WaitForSeconds(lickInterval);
+            joints[i].SetPendingKick(Vector3.up * kickStrength);
+        }
+
+        yield return new WaitForSeconds(lickDecay);
+        joints[joints.Count-1].kinematic = true;
+        licking = false;
     }
 
     private void ConstrainForward() {
         // constraint, skips the root joint
         joints[0].position = topPoint.position;
-        joints[joints.Count-1].position = endPoint.position;
+        if (!licking) joints[joints.Count-1].position = endPoint.position;
+        else endPoint.position = joints[joints.Count-1].position;
         for (int i = 0; i < joints.Count-1; i++) {
             Joint first = joints[i];
             Joint second = joints[i+1];
@@ -72,7 +91,8 @@ public class VerletChain : MonoBehaviour
     private void ConstrainBackward() {
         // constraint, skips the root joint
         joints[0].position = topPoint.position;
-        joints[joints.Count-1].position = endPoint.position;
+        if (!licking) joints[joints.Count-1].position = endPoint.position;
+        else endPoint.position = joints[joints.Count-1].position;
         for (int i = joints.Count-1; i > 0; i--) {
             Joint first = joints[i];
             Joint second = joints[i-1];
@@ -82,7 +102,7 @@ public class VerletChain : MonoBehaviour
             float error = dist-radius;
             Vector3 changeDir = (first.position-second.position).normalized;
             Vector3 changeAmount = changeDir * error;
-            if (i != joints.Count-1) {
+            if (licking || i != joints.Count-1) {
                 first.position -= changeAmount * .5f;
                 second.position += changeAmount * .5f;
             } else {
@@ -103,7 +123,8 @@ public class VerletChain : MonoBehaviour
         Vector3 forceGravity = new Vector3(0, gravity, 0f);
         for (int i = 0; i < joints.Count; i++) {
             j = joints[i];
-            j.currentVelocity = (j.position-j.lastPosition)/Time.deltaTime;
+            j.currentVelocity = (j.position-j.lastPosition)/Time.deltaTime + j.pendingKick;
+            j.pendingKick = Vector3.zero;
             j.lastPosition = j.position;
             if (!j.kinematic) {
                 j.position += j.currentVelocity*Time.deltaTime + forceGravity*Time.deltaTime;
@@ -138,6 +159,10 @@ public class VerletChain : MonoBehaviour
             set {_transform.position = Vector3.Lerp(value, retractedPosition, retracted);}
         }
         public Transform _transform;
+        public Vector3 pendingKick = Vector3.zero;
+        public void SetPendingKick(Vector3 vel) {
+            pendingKick = vel;
+        }
 
 
         public Joint(Transform trsf, bool _kinematic = false) {
