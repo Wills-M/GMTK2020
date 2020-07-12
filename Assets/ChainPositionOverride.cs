@@ -32,8 +32,8 @@ public class ChainPositionOverride : MonoBehaviour
     }
 
     Vector3 RetractedPosition(int index) {
-        Vector3 tipPos = retract * chain._joints.Length * chain.radius * retractAxis + transform.position;
-        Vector3 finalPos = index * chain.radius * -retractAxis + tipPos;
+        Vector3 tipPos = retract * chain._joints.Length * chain.radius * transform.TransformDirection(retractAxis) + transform.position;
+        Vector3 finalPos = index * chain.radius * -transform.TransformDirection(retractAxis) + tipPos;
         return finalPos;
     }
 }
