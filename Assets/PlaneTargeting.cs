@@ -18,7 +18,8 @@ public class PlaneTargeting : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawWireCube(planeOrigin.position, new Vector3(1f, .01f, 1f));
+        Gizmos.matrix = planeOrigin.localToWorldMatrix;
+        Gizmos.DrawWireCube(Vector3.zero, new Vector3(1f, .01f, 1f));
     }
 
     // private void OnGUI()
@@ -35,12 +36,22 @@ public class PlaneTargeting : MonoBehaviour
     //     GUI.Box(mouseTileLabelRect, currentTile.ToString());
     // }
 
-    private Vector3 GetPlaneIntersection()
+    private Vector3 oldGetPlaneIntersection()
     {
         Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
         float delta = ray.origin.y - planeOrigin.position.y;
         Vector3 dirNorm = ray.direction / ray.direction.y;
         Vector3 intersectionPos = ray.origin - dirNorm * delta;
         return intersectionPos;
+    }
+
+    private Vector3 GetPlaneIntersection () {
+        Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
+        
+        var diff = ray.origin - planeOrigin.position;
+        var prod1 = Vector3.Dot(diff,planeOrigin.forward);
+        var prod2 = Vector3.Dot(ray.direction, planeOrigin.up);
+        var prod3 = prod1 / prod2;
+        return ray.origin - ray.direction * prod3;
     }
 }
